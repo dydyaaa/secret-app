@@ -1,0 +1,70 @@
+services:
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   command: >
+  #     sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"
+  #   volumes:
+  #     - ./uploads:/app/uploads
+  #     - .:/app
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - UPLOAD_DIR=/app/uploads
+  #   depends_on:
+  #     audio_db:
+  #       condition: service_healthy
+
+  secret_db:
+    container_name: secret_db
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # prometheus:
+  #   container_name: prometheus
+  #   image: prom/prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  # grafana:
+  #   container_name: grafana
+  #   image: grafana/grafana
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./grafana-provisioning/dashboards:/etc/grafana/provisioning/dashboards
+  #     - ./grafana-provisioning/datasources:/etc/grafana/provisioning/datasources
+
+  # node-exporter:
+  #   container_name: node-exporter
+  #   image: prom/node-exporter
+  #   ports:
+  #     - 9100:9100
+
+  loki:
+    container_name: loki
+    # depends_on:
+    #   - app
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+
+volumes:
+  postgres_data:
+  # grafana_data:
