@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from src.secrets.service import SecretServ
 from src.config import settings
 from src.database import get_db
@@ -15,39 +15,46 @@ router = APIRouter()
 
 
 @router.post('/', response_model=SecretBase)
-async def create_secret(secret_create: SecretCreate, 
+async def create_secret(request: Request,
+                        secret_create: SecretCreate, 
                         db: AsyncSession = Depends(get_db),
                         user: User = Depends(get_current_user),
                         redis: Redis = Depends(get_redis)
                         ):
     
-    unique_key = await SecretServ.create_secret(db, secret_create, user, redis)
+    ip_address = request.client.host
+    unique_key = await SecretServ.create_secret(db, secret_create, user, redis, ip_address)
 
     return SecretBase(
         unique_key=unique_key
     )
     
 @router.get('/{unique_key}', response_model=SecretResponse)
-async def get_secret(unique_key: str,
+async def get_secret(request: Request,
+                     unique_key: str,
                      passphrase: Optional[str] = Query(''),
                      db: AsyncSession = Depends(get_db),
                      user: User = Depends(get_current_user),
                      redis: Redis = Depends(get_redis)
                      ):
     
-    secret = await SecretServ.get_secret(db, unique_key, passphrase, user, redis)
+    ip_address = request.client.host
+    secret = await SecretServ.get_secret(db, unique_key, passphrase, user, redis, ip_address)
     
     return SecretResponse(
         secret=secret
     )
     
 @router.delete('/{unique_key}')
-async def delete_secret(unique_key: str,
+async def delete_secret(request: Request,
+                        unique_key: str,
                         passphrase: Optional[str] = Query(''),
                         db: AsyncSession = Depends(get_db),
                         user: User = Depends(get_current_user),
                         redis: Redis = Depends(get_redis)
                         ):
-    result = await SecretServ.delete_secret(db, unique_key, passphrase, user, redis)
+    
+    ip_address = request.client.host
+    result = await SecretServ.delete_secret(db, unique_key, passphrase, user, redis, ip_address)
     
     return {"status": f"{result}"}

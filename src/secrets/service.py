@@ -11,17 +11,18 @@ from src.auth.utils import get_current_user
 from fastapi import HTTPException, status
 from src.secrets.schemas import SecretCreate, SecretBase
 from redis.asyncio import Redis
+from src.logs.service import LogsServ
 import json
 
 
-logger = logging.getLogger("app.auth")
+logger = logging.getLogger("app.secrets")
 
 class SecretServ:
     
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     
     @classmethod
-    async def create_secret(cls, db: AsyncSession, secret_data: SecretCreate, user, redis: Redis):
+    async def create_secret(cls, db: AsyncSession, secret_data: SecretCreate, user, redis: Redis, ip):
         
         unique_key = str(uuid.uuid4())
         secret_hash = encrypt_string(secret_data.secret)
@@ -59,10 +60,11 @@ class SecretServ:
         except Exception as e:
             logger.error(f'{e}')
         
+        await LogsServ.write_log(db, f'Создан секрет для {user.email}', ip)
         return unique_key
 
     @classmethod
-    async def get_secret(cls, db: AsyncSession, unique_key: str, passphrase: str, user, redis: Redis):
+    async def get_secret(cls, db: AsyncSession, unique_key: str, passphrase: str, user, redis: Redis, ip):
         
         
         result = await redis.get(unique_key)
@@ -103,10 +105,11 @@ class SecretServ:
             
         secret = decrypt_string(secret_hash)
         
+        await LogsServ.write_log(db, f'Чтение секрета для {user.email}', ip)
         return secret
     
     @classmethod
-    async def delete_secret(cls, db: AsyncSession, unique_key: str, passphrase: str, user, redis: Redis):
+    async def delete_secret(cls, db: AsyncSession, unique_key: str, passphrase: str, user, redis: Redis, ip):
         
         await redis.delete(unique_key)
         
@@ -128,4 +131,5 @@ class SecretServ:
                                         user_id=user.id))
         await db.commit()
         
+        await LogsServ.write_log(db, f'Удаление секрета для {user.email}', ip)
         return 'Секрет удален'

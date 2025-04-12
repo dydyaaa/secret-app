@@ -6,6 +6,7 @@ from src.config import settings
 from src.models import Base 
 from src.auth.models import User
 from src.secrets.models import Secrets
+from src.logs.models import Logs
 import logging
 
 logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
