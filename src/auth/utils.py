@@ -17,9 +17,9 @@ def create_access_token(user_id: str) -> str:
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm="HS256")
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db)
-) -> User:
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+        db: AsyncSession = Depends(get_db)
+    ) -> User:
     token = credentials.credentials
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=["HS256"])

@@ -7,6 +7,11 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ACCESS_TOKEN_EXPIRES: int = 3600
     LOKI_URL: str
+    SECRET_ENRYPT: str
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -2,8 +2,12 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from src.auth.router import router as auth_router
+from src.secrets.router import router as secret_router
 from logging.config import fileConfig
 from src.logging_config import setup_logging
+from src.redis import RedisClient
+from redis.asyncio import Redis
+from src.config import settings
 
 
 app = FastAPI(
@@ -14,6 +18,7 @@ app = FastAPI(
 
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(secret_router, prefix="/secret", tags=["secrets"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -21,8 +26,18 @@ async def startup_event():
     logger = logging.getLogger(__name__)
     setup_logging(test_mode=False)
     logger.info("Application starting up")
-
-
+    
+    await RedisClient.init(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        db=settings.REDIS_DB,
+        password=settings.REDIS_PASSWORD
+    )
+    
+@app.on_event("shutdown")
+async def shutdown_event():
+    await RedisClient.close()
+    
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     return JSONResponse(

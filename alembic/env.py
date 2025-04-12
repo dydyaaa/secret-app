@@ -5,6 +5,12 @@ from alembic import context
 from src.config import settings
 from src.models import Base 
 from src.auth.models import User
+from src.secrets.models import Secrets
+import logging
+
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+
+
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.SQLALCHEMY_DATABASE_URI)
